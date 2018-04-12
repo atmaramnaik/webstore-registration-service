@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -82,21 +83,14 @@ public class RegistrationControllerTest {
         mvc.perform(get("/auth/all").header("authorization","Bearer "+TokenAuthenticationService.getToken(first)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-//                .andExpect(jsonPath("$.[0]",hasItem(
-//                        allOf(
-//                                hasProperty("id", is(1L)),
-//                                hasProperty("name", is("Atmaram")),
-//                                hasProperty("email", is("naik.atmaram@gmail.com"))
-//                        ))))
-//                .andExpect(jsonPath("$",hasItem(
-//                    allOf(
-//                            hasProperty("id", is(2L)),
-//                            hasProperty("name", is("Anuradha")),
-//                            hasProperty("email", is("anuradhanaik16@gmail.com"))
-//                    )
-//                )
-//                )
-//                )
+                .andExpect(jsonPath("$[0].id",is(first.getId().intValue())))
+                .andExpect(jsonPath("$[0].name",is(first.getName())))
+                .andExpect(jsonPath("$[0].email",is(first.getEmail())))
+                .andExpect(jsonPath("$[0].password").doesNotExist())
+                .andExpect(jsonPath("$[1].id",is(second.getId().intValue())))
+                .andExpect(jsonPath("$[1].name",is(second.getName())))
+                .andExpect(jsonPath("$[1].email",is(second.getEmail())))
+                .andExpect(jsonPath("$[1].password").doesNotExist())
         ;
         verify(userManager,times(1)).getAllUsers();
         verifyNoMoreInteractions(userManager);
