@@ -76,7 +76,7 @@ public class UserManagerTest {
 
     }
     @Test
-    public void should_create_user_and_return_userndto(){
+    public void should_create_user_and_return_userdto(){
         User user=new User();
         user.setName("Atmaram");
         user.setEmail("naik.atmaram@gmail.com");
