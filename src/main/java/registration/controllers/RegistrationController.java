@@ -1,16 +1,13 @@
 package registration.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mysql.jdbc.MysqlDataTruncation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -20,15 +17,10 @@ import registration.exceptions.InputError;
 import registration.model.Role;
 import registration.model.User;
 import registration.repositories.RoleRepository;
-import registration.repositories.UserRepository;
-import registration.security.AccountCredentials;
-import registration.security.TokenAuthenticationService;
+import registration.service.TokenAuthenticationService;
 import registration.service.UserManager;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.io.IOException;
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +35,9 @@ public class RegistrationController {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private TokenAuthenticationService tokenAuthenticationService;
 
     @PostMapping(path = "/register",consumes =
             {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE},
@@ -60,19 +55,20 @@ public class RegistrationController {
         user.setRoles(Arrays.asList(role_user));
         UserDTO userDTO=new UserDTO(userManager.createUser(user));
         HttpHeaders responseHeaders=new HttpHeaders();
-        responseHeaders.set("authorization","Bearer "+ TokenAuthenticationService.getToken(user));
+        responseHeaders.set("authorization","Bearer "+ tokenAuthenticationService.getToken(user));
         ResponseEntity<UserDTO> userDTOResponseEntity=new ResponseEntity<UserDTO>(userDTO,responseHeaders,HttpStatus.CREATED);
         return userDTOResponseEntity;
     }
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping(path="/all")
     public @ResponseBody Iterable<UserDTO> getAllUsers() {
         return StreamSupport.stream(userManager.getAllUsers().spliterator(),false).map(UserDTO::new).collect(Collectors.toList());
     }
 
+    @PreAuthorize("hasRole('ROLE_USER')")
     @GetMapping(path="/roles")
     public @ResponseBody List<String> roles(@RequestHeader("Authorization") String authHeader) {
-        return TokenAuthenticationService.getRoles(authHeader);
+        return tokenAuthenticationService.getRoles(authHeader);
     }
 
     @ExceptionHandler(InputError.class)

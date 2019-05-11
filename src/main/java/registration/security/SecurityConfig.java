@@ -14,15 +14,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import registration.service.TokenAuthenticationService;
 
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Configuration
     public static class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+        @Autowired
+        JWTAuthenticationFilter jwtAuthenticationFilter;
 
         @Autowired
         private UserDetailsService userDetailsService;
+
+        @Autowired
+        TokenAuthenticationService tokenAuthenticationService;
 
         @Bean
         public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -35,15 +41,13 @@ public class SecurityConfig {
                     .antMatchers("/health").permitAll()
                     .antMatchers("/auth/register").permitAll()
                     .antMatchers("/auth/login").permitAll()
-                    .antMatchers("/auth/all").access("hasRole('ROLE_USER')")
-                    .antMatchers("/auth/roles").access("hasRole('ROLE_USER')")
                     .anyRequest().authenticated()
                     .and()
                     // We filter the api/login requests
-                    .addFilterBefore(new JWTLoginFilter("/auth/login", authenticationManager()),
+                    .addFilterBefore(new JWTLoginFilter("/auth/login", authenticationManager(),tokenAuthenticationService),
                             UsernamePasswordAuthenticationFilter.class)
                     // And filter other requests to check the presence of JWT in header
-                    .addFilterBefore(new JWTAuthenticationFilter(),
+                    .addFilterBefore(jwtAuthenticationFilter,
                             UsernamePasswordAuthenticationFilter.class);
         }
 

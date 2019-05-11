@@ -1,52 +1,59 @@
 package registration.controllers;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.hamcrest.Matchers.isEmptyString;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.not;
 
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
+
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import registration.TestUtil;
 import registration.dto.RegistrationDTO;
 import registration.exceptions.InputError;
 import registration.model.Role;
 import registration.model.User;
 import registration.repositories.RoleRepository;
-import registration.security.TokenAuthenticationService;
+import registration.security.JWTAuthenticationFilter;
+import registration.security.SecurityConfig;
+import registration.service.TokenAuthenticationService;
 import registration.service.UserManager;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
-
 import static org.hamcrest.core.Is.is;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(controllers = {RegistrationController.class},includeFilters = @ComponentScan.Filter(classes = EnableWebSecurity.class))
+@WebMvcTest(RegistrationController.class)
 public class RegistrationControllerTest {
+
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private WebApplicationContext context;
 
     @MockBean
     private UserManager userManager;
@@ -56,6 +63,19 @@ public class RegistrationControllerTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private TokenAuthenticationService tokenAuthenticationService;
+
+    @Before
+    public void setup() {
+        mvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .defaultRequest(get("/auth/all")
+                        .with(user("user1@localhost.com").password("hello").roles("USER")))
+                .apply(springSecurity())
+                .build();
+    }
 
     @Test
     public void should_return_all_users() throws Exception{
@@ -74,13 +94,8 @@ public class RegistrationControllerTest {
         second.setEmail("anuradhanaik16@gmail.com");
         second.setId(new Integer(2));
 
-        RegistrationDTO registrationDTO=new RegistrationDTO(first);
-        Set<GrantedAuthority> grantedAuthorities=new HashSet<>();
-        grantedAuthorities.add(new SimpleGrantedAuthority("USER"));
-
-        doReturn(new org.springframework.security.core.userdetails.User(registrationDTO.getEmail(),registrationDTO.getPassword(),grantedAuthorities)).when(userDetailsService).loadUserByUsername(anyString());
         doReturn(Arrays.asList(first,second)).when(userManager).getAllUsers();
-        mvc.perform(get("/auth/all").header("authorization","Bearer "+TokenAuthenticationService.getToken(first)))
+        mvc.perform(get("/auth/all"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id",is(first.getId().intValue())))
