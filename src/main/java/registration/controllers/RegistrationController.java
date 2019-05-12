@@ -21,6 +21,7 @@ import registration.service.TokenAuthenticationService;
 import registration.service.UserManager;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,6 +66,12 @@ public class RegistrationController {
     @GetMapping(path="/roles")
     public @ResponseBody List<String> roles(@RequestHeader("Authorization") String authHeader) {
         return tokenAuthenticationService.getRoles(authHeader);
+    }
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @GetMapping(path="/profile")
+    public @ResponseBody UserDTO profile(Principal principal) {
+        return new UserDTO(userManager.findByEmail(principal.getName()));
     }
 
     @ExceptionHandler(InputError.class)
