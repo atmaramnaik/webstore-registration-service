@@ -8,11 +8,15 @@ import org.springframework.stereotype.Service;
 import registration.dto.RegistrationDTO;
 import registration.dto.UserDTO;
 import registration.exceptions.InputError;
+import registration.model.Role;
 import registration.model.User;
+import registration.repositories.RoleRepository;
 import registration.repositories.UserRepository;
 
 
 import org.hibernate.exception.ConstraintViolationException;
+
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -24,9 +28,15 @@ public class UserManagerImpl implements UserManager {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
+
     @Override
     public User createUser(User user) throws InputError {
         try{
+            Role role_user = roleRepository.findByName("ROLE_USER");
+            user.setRoles(Arrays.asList(role_user));
             user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
             return userRepository.save(user);
         } catch (DataIntegrityViolationException ex){

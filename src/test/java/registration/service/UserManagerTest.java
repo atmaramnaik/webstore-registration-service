@@ -19,7 +19,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import registration.dto.RegistrationDTO;
 import registration.dto.UserDTO;
 import registration.exceptions.InputError;
+import registration.model.Role;
 import registration.model.User;
+import registration.repositories.RoleRepository;
 import registration.repositories.UserRepository;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -45,6 +47,10 @@ public class UserManagerTest {
             return mock(UserRepository.class);
         }
         @Bean
+        public RoleRepository roleRepository(){
+            return mock(RoleRepository.class);
+        }
+        @Bean
         public BCryptPasswordEncoder bCryptPasswordEncoder() {
             return new BCryptPasswordEncoder();
         }
@@ -55,6 +61,9 @@ public class UserManagerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Test
     public void should_get_all_users_return_list_of_userdto(){
@@ -82,8 +91,12 @@ public class UserManagerTest {
         user.setEmail("naik.atmaram@gmail.com");
         user.setId(new Integer(1));
         user.setPassword("hello");
-
+        Role role=new Role();
+        role.setName("ROLE_USER");
+        role.setId(new Long(1));
+        doReturn(role).when(roleRepository).findByName(anyString());
         doReturn(user).when(userRepository).save(any(User.class));
+
 
         User response= null;
         try {
@@ -102,7 +115,10 @@ public class UserManagerTest {
         user.setEmail("naik.atmaram@gmail.com");
         user.setId(new Integer(1));
         user.setPassword("hello");
-
+        Role role=new Role();
+        role.setName("ROLE_USER");
+        role.setId(new Long(1));
+        doReturn(role).when(roleRepository).findByName(anyString());
         doThrow(new DataIntegrityViolationException("Test", Mockito.mock(ConstraintViolationException.class))).when(userRepository).save(any(User.class));
         assertThatThrownBy(()->{userManager.createUser(user);}).isEqualTo(new InputError(InputError.DUPLICATE_EMAIL));
 
@@ -114,7 +130,10 @@ public class UserManagerTest {
         user.setEmail("naik.atmaram@gmail.com");
         user.setId(new Integer(1));
         user.setPassword("hello");
-
+        Role role=new Role();
+        role.setName("ROLE_USER");
+        role.setId(new Long(1));
+        doReturn(role).when(roleRepository).findByName(anyString());
         doThrow(new DataIntegrityViolationException("Test", Mockito.mock(DataException.class))).when(userRepository).save(any(User.class));
 
         assertThatThrownBy(()->{userManager.createUser(user);}).isEqualTo(new InputError(InputError.DATA_TOO_LONG));
@@ -127,7 +146,10 @@ public class UserManagerTest {
         user.setEmail("naik.atmaram@gmail.com");
         user.setId(new Integer(1));
         user.setPassword("hello");
-
+        Role role=new Role();
+        role.setName("ROLE_USER");
+        role.setId(new Long(1));
+        doReturn(role).when(roleRepository).findByName(anyString());
         doThrow(new DataIntegrityViolationException("Test", Mockito.mock(Exception.class))).when(userRepository).save(any(User.class));
 
         assertThatThrownBy(()->{userManager.createUser(user);}).isEqualTo(new InputError(InputError.UNKOWN));

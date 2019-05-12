@@ -34,9 +34,6 @@ public class RegistrationController {
     private UserManager userManager;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
     private TokenAuthenticationService tokenAuthenticationService;
 
     @PostMapping(path = "/register",consumes =
@@ -51,8 +48,7 @@ public class RegistrationController {
         user.setName(registrationDTO.getName());
         user.setEmail(registrationDTO.getEmail());
         user.setPassword(registrationDTO.getPassword());
-        Role role_user = roleRepository.findByName("ROLE_USER");
-        user.setRoles(Arrays.asList(role_user));
+
         UserDTO userDTO=new UserDTO(userManager.createUser(user));
         HttpHeaders responseHeaders=new HttpHeaders();
         responseHeaders.set("authorization","Bearer "+ tokenAuthenticationService.getToken(user));
